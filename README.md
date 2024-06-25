@@ -1,10 +1,10 @@
 # AtlEventProcess
 
-# Repository for GSoC project on ATLAS data compression
+### Repository for GSoC project on ATLAS data compression
 
 Contains a simplified & modernized version of [ATLCopyBSEvent.cxx](https://gitlab.cern.ch/atlas/athena/-/blob/main/Event/ByteStreamCnvSvc/test/AtlCopyBSEvent.cxx).
 
-#Build Instructions:
+### Build Instructions:
 Requires boost, eformat, ers, DataWriter, & DataReader libraries.
 
 ```
