@@ -1,0 +1,9 @@
+#ifndef EVENTSTORAGE_ADLER32MTDEFAULTS_H
+#define EVENTSTORAGE_ADLER32MTDEFAULTS_H
+
+namespace Adler32MTDefaults {
+  static const int NB_THREADS = 1;
+  static const uint32_t THRESHOLD = 30000;
+}
+
+#endif /* EVENTSTORAGE_ADLER32MTDEFAULTS_H */
