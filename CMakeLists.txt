@@ -13,7 +13,7 @@ target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/src
                                                    ${CMAKE_SOURCE_DIR}/include
                                                    ${GTest_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} PRIVATE ${Boost_LIBRARIES} ${GTest_LIBRARIES} eformat ers DataWriter DataReader eformat_old)
+target_link_libraries(${PROJECT_NAME} PRIVATE ${Boost_LIBRARIES} ${GTest_LIBRARIES} eformat ers DataWriter DataReader eformat_old zstd)
 
 enable_testing()
 

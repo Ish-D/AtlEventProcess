@@ -36,13 +36,14 @@ make tests
 
 The projects input parameters are as follows:
 ```
-[-d --deflate] -e [--event] <eventNumbers> [-r, --run <runnumber>] [-l, --listevents] [-t --checkevents] -o, --out outputfile inputfiles....
+[-c --compress <compression level>] [-d --deflate] -e [--event] <eventNumbers> [-r, --run <runnumber>] [-l, --listevents] [-t --checkevents] -o, --out outputfile inputfiles....
 Where eventNumbers is a comma-separated list of events
 ```
 
 | Argument | Purpose|
 |----------|------- |
-|-d or --deflate| Compress the output file using ZLIB|
+|-d or --deflate| Compress the output file using zstd with the specified compression level|
+|-d or --deflate| Write a file that was previously compressed using ZLIB|
 |-e or --event | Output only particular event numbers (comma separated, e.g. -e 1,2,3 ...)|
 |-r or --run | Output only particular run numbers (comma separated, e.g. -r 4,5,6 ...)|
 |-l or --listevents | List the events that are being processed|
