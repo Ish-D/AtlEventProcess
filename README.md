@@ -42,7 +42,7 @@ Where eventNumbers is a comma-separated list of events
 
 | Argument | Purpose|
 |----------|------- |
-|-d or --deflate| Compress the output file using zstd with the specified compression level|
+|-c or --compress| Compress the output file using zstd with the specified compression level|
 |-d or --deflate| Write a file that was previously compressed using ZLIB|
 |-e or --event | Output only particular event numbers (comma separated, e.g. -e 1,2,3 ...)|
 |-r or --run | Output only particular run numbers (comma separated, e.g. -r 4,5,6 ...)|
