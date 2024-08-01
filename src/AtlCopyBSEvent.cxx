@@ -19,7 +19,7 @@ int main(int argc, char* argv[])
     // Interpret command line arguments
     if (argc < 3) {
         std::cerr << "usage: " << argv[0]
-                  << " [-d --deflate] -e [--event] <eventNumbers> [-r, --run "
+                  << " [-c --compress <level>] [-d --deflate] -e [--event] <eventNumbers> [-r, --run "
                      "<runnumber>] [-l, --listevents] [-t --checkevents] -o, --out "
                      "outputfile "
                      "inputfiles...."
@@ -280,12 +280,14 @@ void eventLoop(std::unique_ptr<DataReader> pDR, std::unique_ptr<EventStorage::Da
 
             const uint32_t size = fe.fragment_size_word();
 
+            ZSTD_CCtx* cctx = ZSTD_createCCtx();
+
             auto writeData = [&]() {
                 if (compressData) {
                     const size_t outputSizeBound = ZSTD_compressBound(sizeof(uint32_t) * (size));
                     void*        compressedData  = malloc(outputSizeBound);
                     const size_t outputSize =
-                        ZSTD_compress(compressedData, outputSizeBound, reinterpret_cast<void*>(fragment.get()), size, compressionLevel);
+                        ZSTD_compressCCtx(cctx, compressedData, outputSizeBound, reinterpret_cast<void*>(fragment.get()), size, compressionLevel);
 
                     pDW->putData(sizeof(uint32_t) * outputSize, compressedData);
                     free(compressedData);
@@ -322,6 +324,8 @@ void eventLoop(std::unique_ptr<DataReader> pDR, std::unique_ptr<EventStorage::Da
                 // Write event to file
                 writeData();
             }
+
+            ZSTD_freeCCtx(cctx);
         }
         catch (eformat::Issue& ex) {
             std::cerr << "Uncaught eformat issue: " << ex.what() << std::endl;
@@ -335,6 +339,7 @@ void eventLoop(std::unique_ptr<DataReader> pDR, std::unique_ptr<EventStorage::Da
         catch (...) {
             std::cerr << std::endl << "Uncaught unknown exception" << std::endl;
         }
+
 
         // End event processing
     }
