@@ -51,7 +51,7 @@ int main(int argc, char* argv[])
         if (arg1 == "-d" || arg1 == "--deflate") {
             writePrecompressed = true;
         }
-        if (arg1 == "-c" || arg1 == "--compress") {
+        else if (arg1 == "-c" || arg1 == "--compress") {
             std::string arg2;
 
             if ((i + 1) < argc)
