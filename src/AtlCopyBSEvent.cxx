@@ -1,6 +1,7 @@
 #include <iostream>
 #include <optional>
 #include <vector>
+#include <fstream>
 
 #include "EventStorage/DataWriter.h"
 #include "EventStorage/pickDataReader.h"
@@ -10,7 +11,7 @@
 #include <zstd.h>
 
 void eventLoop(std::unique_ptr<DataReader>, std::unique_ptr<EventStorage::DataWriter>, uint64_t, const std::vector<uint64_t>&, uint32_t, bool, bool,
-               bool, bool, bool, int);
+               bool, bool, bool, int, std::string);
 
 int main(int argc, char* argv[])
 {
@@ -40,7 +41,7 @@ int main(int argc, char* argv[])
     bool                     checkEvents        = false;
     bool                     writePrecompressed = false;
     bool                     compressData       = false;
-    int                      compressionLevel   = 1;
+    int                      compressionLevel   = 8;
     uint64_t                 nFound             = 0;
 
     // Process command line arguments
@@ -216,7 +217,7 @@ int main(int argc, char* argv[])
         }
 
         eventLoop(std::move(pDR), std::move(pDW), nFound, searchEvents, searchRun, searchRunSet, listEvents, checkEvents, writePrecompressed,
-                  compressData, compressionLevel);
+                  compressData, compressionLevel, fileNameOut);
 
         if (nFound >= searchEvents.size() && nFound != 0)
             break;
@@ -234,7 +235,7 @@ int main(int argc, char* argv[])
 
 void eventLoop(std::unique_ptr<DataReader> pDR, std::unique_ptr<EventStorage::DataWriter> pDW, uint64_t nFound,
                const std::vector<uint64_t>& SearchEvents, uint32_t searchRun, bool searchRunSet, bool listEvents, bool checkEvents,
-               bool writePrecompressed, bool compressData, int compressionLevel)
+               bool writePrecompressed, bool compressData, int compressionLevel, std::string fileNameOut)
 {
     using namespace eformat;
 
@@ -254,7 +255,24 @@ void eventLoop(std::unique_ptr<DataReader> pDR, std::unique_ptr<EventStorage::Da
         }
         ++eventCounter;
 
+        ZSTD_CCtx* cctx = ZSTD_createCCtx();
+        ZSTD_CCtx_setParameter(cctx, ZSTD_c_compressionLevel, compressionLevel);
+        ZSTD_CCtx_setParameter(cctx, ZSTD_c_checksumFlag, 1);
+
+        ZSTD_DCtx* dctx = ZSTD_createDCtx();
+
         try {
+            
+            /*
+            const size_t maxDecompressedSize = ZSTD_getFrameContentSize(fragment.get(), eventSize);
+            std::vector<uint32_t> outputFragments(maxDecompressedSize);
+            // const size_t decompressedSize = ZSTD_decompress(outputFragments.data(), maxDecompressedSize, fragment.get(), eventSize);
+            // const size_t decompressedSize = ZSTD_decompressDCtx(dctx, outputFragments.data(), maxDecompressedSize, fragment.get(), eventSize);
+
+            std::cout << maxDecompressedSize << " " << decompressedSize << " " << eventSize << "\n";
+            */
+
+
             // Make a fragment with eformat 3.0, check it's validity
             if (static_cast<eformat::HeaderMarker>(fragment[0]) != FULL_EVENT) {
                 std::cout << "Event doesn't start with full event fragment (found " << std::ios::hex << fragment[0] << ") ignored." << std::endl;
@@ -279,8 +297,6 @@ void eventLoop(std::unique_ptr<DataReader> pDR, std::unique_ptr<EventStorage::Da
             }
 
             const uint32_t size = fe.fragment_size_word();
-
-            ZSTD_CCtx* cctx = ZSTD_createCCtx();
 
             auto writeData = [&]() {
                 if (compressData) {
@@ -325,7 +341,6 @@ void eventLoop(std::unique_ptr<DataReader> pDR, std::unique_ptr<EventStorage::Da
                 writeData();
             }
 
-            ZSTD_freeCCtx(cctx);
         }
         catch (eformat::Issue& ex) {
             std::cerr << "Uncaught eformat issue: " << ex.what() << std::endl;
@@ -340,7 +355,8 @@ void eventLoop(std::unique_ptr<DataReader> pDR, std::unique_ptr<EventStorage::Da
             std::cerr << std::endl << "Uncaught unknown exception" << std::endl;
         }
 
-
+        ZSTD_freeCCtx(cctx);
+        ZSTD_freeDCtx(dctx);
         // End event processing
     }
 }
