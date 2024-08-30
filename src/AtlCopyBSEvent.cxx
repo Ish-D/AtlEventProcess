@@ -243,11 +243,23 @@ void eventLoop(std::unique_ptr<DataReader> pDR, std::unique_ptr<EventStorage::Da
 
     // Loop over events
     while (pDR->good()) {
+        ZSTD_DCtx* dctx = ZSTD_createDCtx();
+        ZSTD_CCtx* cctx = ZSTD_createCCtx();
+        ZSTD_CCtx_setParameter(cctx, ZSTD_c_compressionLevel, compressionLevel);
+        ZSTD_CCtx_setParameter(cctx, ZSTD_c_checksumFlag, 1);
+
         unsigned int eventSize;
         char*        buf;
 
         // Process data from DataReader
         DRError                     ecode = pDR->getData(eventSize, &buf);
+
+        const size_t maxDecompressedSize = ZSTD_getFrameContentSize(buf, eventSize/4);
+        std::vector<uint32_t> outputFragments(maxDecompressedSize);
+        const size_t decompressedSize = ZSTD_decompressDCtx(dctx, outputFragments.data(), maxDecompressedSize, buf, eventSize/4);
+
+        std::cout << maxDecompressedSize << " " << decompressedSize << " " << eventSize/4 << "\n";
+
         std::unique_ptr<uint32_t[]> fragment{reinterpret_cast<uint32_t*>(buf)};
         if (ecode != DRError::DROK) {
             std::cout << "Can't read from file!" << std::endl;
@@ -255,24 +267,7 @@ void eventLoop(std::unique_ptr<DataReader> pDR, std::unique_ptr<EventStorage::Da
         }
         ++eventCounter;
 
-        ZSTD_CCtx* cctx = ZSTD_createCCtx();
-        ZSTD_CCtx_setParameter(cctx, ZSTD_c_compressionLevel, compressionLevel);
-        ZSTD_CCtx_setParameter(cctx, ZSTD_c_checksumFlag, 1);
-
-        ZSTD_DCtx* dctx = ZSTD_createDCtx();
-
         try {
-            
-            /*
-            const size_t maxDecompressedSize = ZSTD_getFrameContentSize(fragment.get(), eventSize);
-            std::vector<uint32_t> outputFragments(maxDecompressedSize);
-            // const size_t decompressedSize = ZSTD_decompress(outputFragments.data(), maxDecompressedSize, fragment.get(), eventSize);
-            // const size_t decompressedSize = ZSTD_decompressDCtx(dctx, outputFragments.data(), maxDecompressedSize, fragment.get(), eventSize);
-
-            std::cout << maxDecompressedSize << " " << decompressedSize << " " << eventSize << "\n";
-            */
-
-
             // Make a fragment with eformat 3.0, check it's validity
             if (static_cast<eformat::HeaderMarker>(fragment[0]) != FULL_EVENT) {
                 std::cout << "Event doesn't start with full event fragment (found " << std::ios::hex << fragment[0] << ") ignored." << std::endl;
@@ -303,9 +298,9 @@ void eventLoop(std::unique_ptr<DataReader> pDR, std::unique_ptr<EventStorage::Da
                     const size_t outputSizeBound = ZSTD_compressBound(sizeof(uint32_t) * (size));
                     void*        compressedData  = malloc(outputSizeBound);
                     const size_t outputSize =
-                        ZSTD_compressCCtx(cctx, compressedData, outputSizeBound, reinterpret_cast<void*>(fragment.get()), size, compressionLevel);
+                        ZSTD_compressCCtx(cctx, compressedData, outputSizeBound, fragment.get(), size, compressionLevel);
 
-                    pDW->putData(sizeof(uint32_t) * outputSize, compressedData);
+                    pDW->putPrecompressedData(sizeof(uint32_t) * outputSize, compressedData);
                     free(compressedData);
                 }
                 else if (writePrecompressed) {
