@@ -3,7 +3,6 @@ project(AtlEventProcess CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 
-find_package( Boost REQUIRED)
 find_package(GTest REQUIRED)
 
 add_executable(${PROJECT_NAME} src/AtlCopyBSEvent.cxx)

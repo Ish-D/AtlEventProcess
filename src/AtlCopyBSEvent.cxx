@@ -11,7 +11,7 @@
 #include <zstd.h>
 
 void eventLoop(std::unique_ptr<DataReader>, std::unique_ptr<EventStorage::DataWriter>, uint64_t, const std::vector<uint64_t>&, uint32_t, bool, bool,
-               bool, bool, bool, int, std::string);
+               bool, bool, bool, int);
 
 int main(int argc, char* argv[])
 {
@@ -217,7 +217,7 @@ int main(int argc, char* argv[])
         }
 
         eventLoop(std::move(pDR), std::move(pDW), nFound, searchEvents, searchRun, searchRunSet, listEvents, checkEvents, writePrecompressed,
-                  compressData, compressionLevel, fileNameOut);
+                  compressData, compressionLevel);
 
         if (nFound >= searchEvents.size() && nFound != 0)
             break;
@@ -235,7 +235,7 @@ int main(int argc, char* argv[])
 
 void eventLoop(std::unique_ptr<DataReader> pDR, std::unique_ptr<EventStorage::DataWriter> pDW, uint64_t nFound,
                const std::vector<uint64_t>& SearchEvents, uint32_t searchRun, bool searchRunSet, bool listEvents, bool checkEvents,
-               bool writePrecompressed, bool compressData, int compressionLevel, std::string fileNameOut)
+               bool writePrecompressed, bool compressData, int compressionLevel)
 {
     using namespace eformat;
 
@@ -254,11 +254,11 @@ void eventLoop(std::unique_ptr<DataReader> pDR, std::unique_ptr<EventStorage::Da
         // Process data from DataReader
         DRError                     ecode = pDR->getData(eventSize, &buf);
 
-        const size_t maxDecompressedSize = ZSTD_getFrameContentSize(buf, eventSize/4);
-        std::vector<uint32_t> outputFragments(maxDecompressedSize);
-        const size_t decompressedSize = ZSTD_decompressDCtx(dctx, outputFragments.data(), maxDecompressedSize, buf, eventSize/4);
+        // const size_t maxDecompressedSize = ZSTD_getFrameContentSize(buf, eventSize/4);
+        // std::vector<uint32_t> outputFragments(maxDecompressedSize);
+        // const size_t decompressedSize = ZSTD_decompressDCtx(dctx, outputFragments.data(), maxDecompressedSize, buf, eventSize/4);
 
-        std::cout << maxDecompressedSize << " " << decompressedSize << " " << eventSize/4 << "\n";
+        // std::cout << maxDecompressedSize << " " << decompressedSize << " " << eventSize/4 << "\n";
 
         std::unique_ptr<uint32_t[]> fragment{reinterpret_cast<uint32_t*>(buf)};
         if (ecode != DRError::DROK) {
