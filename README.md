@@ -136,7 +136,7 @@ cmake ..
 ./AtlEventProcess <parameters>
 
 # To run the tests
-make tests
+make test
 ```
 
 The projects input parameters are as follows:
